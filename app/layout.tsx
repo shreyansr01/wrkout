@@ -14,7 +14,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "wrkout",
-  description: "Track your workouts and progressive overload journey",
+  description: "A minimal workout tracker for PPL split. Built with Next.js and Supabase.",
   generator: 'Next.js',
   applicationName: 'wrkout',
   keywords: ['workout', 'fitness', 'progressive overload', 'PPL', 'strength training'],

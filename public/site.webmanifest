@@ -1,7 +1,7 @@
 {
   "name": "wrkout",
   "short_name": "wrkout",
-  "description": "Progressive Overload Workout Tracker",
+  "description": "A minimal workout tracker for PPL split",
   "icons": [
     {
       "src": "/pwa-startup-192x192.png",

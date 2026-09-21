@@ -1,13 +1,11 @@
 # wrkout
 
-Fast, distraction-free workout logger built for Push, Pull, Legs (PPL) splits. Log sets in seconds, track volume, and monitor progressive overload.
+> Minimal, distraction-free workout logger built for Push, Pull, Legs (PPL) split. Log sets in seconds, track volume, and monitor progressive overload.
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-wrkout--tracker.vercel.app-blue?style=flat-square)](https://wrkout-tracker.vercel.app/)
 [![Database](https://img.shields.io/badge/Database-Supabase-3ECF8E?style=flat-square)](https://supabase.com)
 
 ---
-
-## Preview
 
 <p align="center">
   <img src="public/readme_home_page.png" alt="wrkout Dashboard" width="750" />
@@ -20,7 +18,7 @@ Fast, distraction-free workout logger built for Push, Pull, Legs (PPL) splits. L
 - **Inline logging**: Adjust weight, reps, and sets with steppers and save in one tap.
 - **Progressive overload**: Automatic volume calculation and workout-to-workout comparisons.
 - **Custom routines**: Organize Push, Pull, Legs, and custom splits with built-in exercises.
-- **Fast sign-in**: Simple username login with optional email recovery.
+- **Minimal sign-in**: Simple username login with optional email recovery.
 - **Audio & haptics**: Subtle sound cues and vibration feedback when completing sets.
 
 ---
