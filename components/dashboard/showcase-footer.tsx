@@ -32,7 +32,7 @@ export function ShowcaseFooter({ className = "" }: ShowcaseFooterProps) {
         <span className="text-zinc-700">/</span>
 
         <a
-          href="https://github.com/ShreyanDev5/wrkout"
+          href="https://github.com/shreyansr01/wrkout"
           target="_blank"
           rel="noreferrer"
           className="group inline-flex items-center gap-1.5 text-zinc-400 hover:text-zinc-100 transition-colors"
