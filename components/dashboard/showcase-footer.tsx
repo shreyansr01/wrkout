@@ -19,7 +19,7 @@ export function ShowcaseFooter({ className = "" }: ShowcaseFooterProps) {
       {/* Bottom line: Shreyan Sardar ↗ / GitHub */}
       <div className="flex items-center justify-center gap-2.5 font-medium flex-shrink-0">
         <a
-          href="https://shreyandev.vercel.app"
+          href="https://shreyansr.vercel.app/"
           target="_blank"
           rel="noreferrer"
           className="group inline-flex items-center gap-1 text-zinc-400 hover:text-zinc-100 transition-colors"
