@@ -18,9 +18,9 @@ export const metadata: Metadata = {
   generator: 'Next.js',
   applicationName: 'wrkout',
   keywords: ['workout', 'fitness', 'progressive overload', 'PPL', 'strength training'],
-  authors: [{ name: 'wrkout team' }],
-  creator: 'wrkout team',
-  publisher: 'wrkout',
+  authors: [{ name: 'Shreyan Sardar', url: 'https://shreyansr.vercel.app/' }],
+  creator: 'Shreyan Sardar',
+  publisher: 'Shreyan Sardar',
   formatDetection: {
     telephone: false,
   },
