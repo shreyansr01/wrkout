@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import {
   PlusCircle,
@@ -25,14 +25,11 @@ const DEFAULT_EXERCISE_SUGGESTIONS = [
   "Core Plank", "Jumping Jacks", "Kettlebell Swings", "Russian Twists", "Burpees",
   "Lateral Raise", "Face Pull"
 ]
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { formatDate, cn } from "@/lib/utils"
 import { v4 as uuidv4 } from 'uuid'
 import type { Workout, WorkoutDay, WorkoutExercise } from "@/lib/types"
 import { motion, AnimatePresence } from "framer-motion"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useAuth } from '@/lib/auth/auth-context'
 import { useHaptics } from "@/hooks/use-haptics"
 import { DeletionConfirmationModal } from "@/components/modals/deletion-confirmation-modal"
@@ -41,91 +38,12 @@ import { updateWorkoutDayExercises, loadUserWorkoutDays, createDefaultRoutinesFo
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import dynamic from 'next/dynamic'
 import { ShowcaseFooter } from "@/components/dashboard/showcase-footer"
+import { ExerciseItem, AddWorkoutDialog, AddExerciseDialog, AccountSettingsCard } from "@/components/settings"
 
 const OnboardingGuide = dynamic(() => import("@/components/onboarding/onboarding-guide").then(mod => mod.OnboardingGuide), {
   loading: () => null,
   ssr: false
 })
-
-interface ExerciseItemProps {
-  exercise: WorkoutExercise;
-  index: number;
-  totalExercises: number;
-  dayId: string;
-  workoutId: string;
-  onMoveUp: (dayId: string, index: number) => void;
-  onMoveDown: (dayId: string, index: number) => void;
-  onDelete: (workoutId: string, dayId: string, exerciseId: string, exerciseName: string) => void;
-  isEditMode: boolean;
-}
-
-const ExerciseItem = memo(({
-  exercise,
-  index,
-  totalExercises,
-  dayId,
-  workoutId,
-  onMoveUp,
-  onMoveDown,
-  onDelete,
-  isEditMode
-}: ExerciseItemProps) => {
-  return (
-    <li
-      className={cn(
-        "flex items-center justify-between py-2 px-2.5 rounded-lg transition-colors",
-        isEditMode ? "bg-zinc-900/60" : "hover:bg-zinc-800/30"
-      )}
-    >
-      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-        {isEditMode ? (
-          <div className="flex items-center gap-0.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onMoveUp(dayId, index)}
-              disabled={index === 0}
-              className="h-6 w-6 p-0 rounded-md transition-all text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-20"
-              aria-label={`Move ${exercise.name} up`}
-            >
-              <ArrowUp className="h-3 w-3" aria-hidden="true" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onMoveDown(dayId, index)}
-              disabled={index === totalExercises - 1}
-              className="h-6 w-6 p-0 rounded-md transition-all text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-20"
-              aria-label={`Move ${exercise.name} down`}
-            >
-              <ArrowDown className="h-3 w-3" aria-hidden="true" />
-            </Button>
-          </div>
-        ) : (
-          <div className="h-1.5 w-1.5 rounded-full bg-zinc-600 flex-shrink-0 ml-1" />
-        )}
-        <span className="text-xs font-medium text-zinc-200 truncate py-0.5" title={exercise.name}>
-          {exercise.name}
-        </span>
-      </div>
-      {isEditMode && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => onDelete(workoutId, dayId, exercise.id, exercise.name)}
-          className="h-6 w-6 p-0 rounded-md transition-all text-zinc-400 hover:bg-red-950/40 hover:text-red-400 border border-transparent hover:border-red-900/40"
-          aria-label={`Delete ${exercise.name} exercise`}
-        >
-          <Trash2 className="h-3 w-3" aria-hidden="true" />
-        </Button>
-      )}
-    </li>
-  );
-})
-ExerciseItem.displayName = "ExerciseItem"
 
 interface SettingsScreenProps {
   workouts: Workout[]
@@ -264,7 +182,6 @@ export function SettingsScreen({ workouts, workoutDays, onUpdateWorkoutsAndDays 
   const [isCreatingExercise, setIsCreatingExercise] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const filteredExercises = useMemo(() => {
     if (!newExerciseName.trim()) return [];
@@ -791,102 +708,28 @@ export function SettingsScreen({ workouts, workoutDays, onUpdateWorkoutsAndDays 
             </h2>
           </div>
 
-          <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl overflow-hidden shadow-sm transition-all duration-200">
-            <div
-              className="flex items-center justify-between py-3 px-3.5 cursor-pointer select-none"
-              onClick={() => {
-                haptic("light")
-                setIsAccountExpanded((prev) => !prev)
-              }}
-            >
-              <span className="font-bold text-zinc-100 text-sm tracking-tight truncate">
-                {displayUsername ? `@${displayUsername}` : user?.email || "Account Options"}
-              </span>
-              <ChevronDown className={cn("h-4 w-4 text-zinc-400 transition-transform duration-200 flex-shrink-0", isAccountExpanded && "rotate-180")} />
-            </div>
-
-            <AnimatePresence>
-              {isAccountExpanded && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="border-t border-zinc-800/80"
-                >
-                  <div className="p-3.5 space-y-4">
-                    {/* Recovery Email Form */}
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-foreground text-sm">Recovery Email</h3>
-                      
-                      <form onSubmit={handleUpdateRecoveryEmail} className="space-y-3 pt-0.5">
-                        {emailMessage && (
-                          <p className="text-xs text-pull-light font-medium bg-pull-light/10 border border-pull-light/20 px-3 py-2 rounded-lg animate-in fade-in duration-300">
-                            {emailMessage}
-                          </p>
-                        )}
-                        {emailError && (
-                          <p className="text-xs text-leg-light font-medium bg-leg-light/10 border border-leg-light/20 px-3 py-2 rounded-lg animate-in fade-in duration-300">
-                            {emailError}
-                          </p>
-                        )}
-                        
-                        <div className="flex flex-row items-center gap-2">
-                          <Input
-                            id="settings-recovery-email"
-                            type="email"
-                            value={recoveryEmailState}
-                            onChange={(e) => setRecoveryEmailState(e.target.value)}
-                            placeholder="e.g. you@example.com"
-                            required
-                            className="h-9 rounded-xl border-zinc-700/60 bg-zinc-950/70 text-xs text-zinc-100 placeholder-zinc-500 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 flex-1 px-3"
-                          />
-                          <button
-                            type="submit"
-                            disabled={updatingEmail || recoveryEmailState === (user?.user_metadata?.recovery_email || '')}
-                            className="h-9 rounded-xl bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 disabled:pointer-events-none px-3.5 text-xs font-semibold text-zinc-200 transition-all active:scale-[0.98] border border-zinc-700/50 flex items-center justify-center cursor-pointer flex-shrink-0"
-                          >
-                            {updatingEmail ? 'Saving...' : 'Save'}
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-
-                    <div className="-mx-3.5 h-px bg-zinc-800/80" />
-
-                    {/* Account Actions */}
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-foreground text-sm">Quick Actions</h3>
-                      <div className="grid grid-cols-2 gap-2.5 w-full pt-0.5">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full h-9 px-3 rounded-xl bg-zinc-800/60 hover:bg-zinc-700/60 text-zinc-200 transition-all text-xs font-medium border border-zinc-700/50 active:scale-[0.98]"
-                          onClick={() => {
-                            haptic("light");
-                            setShowOnboarding(true);
-                          }}
-                        >
-                          View Guide
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full h-9 px-3 rounded-xl bg-zinc-800/60 hover:bg-red-950/40 text-red-400 hover:text-red-300 transition-all text-xs font-medium border border-zinc-700/50 hover:border-red-900/40 active:scale-[0.98]"
-                          onClick={() => {
-                            haptic("warning");
-                            setIsSignOutOpen(true);
-                          }}
-                        >
-                          Sign Out
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <AccountSettingsCard
+            displayUsername={displayUsername}
+            userEmail={user?.email}
+            isAccountExpanded={isAccountExpanded}
+            setIsAccountExpanded={setIsAccountExpanded}
+            recoveryEmailState={recoveryEmailState}
+            setRecoveryEmailState={setRecoveryEmailState}
+            handleUpdateRecoveryEmail={handleUpdateRecoveryEmail}
+            emailMessage={emailMessage}
+            emailError={emailError}
+            updatingEmail={updatingEmail}
+            currentRecoveryEmail={user?.user_metadata?.recovery_email}
+            onViewGuide={() => {
+              haptic("light");
+              setShowOnboarding(true);
+            }}
+            onSignOutClick={() => {
+              haptic("warning");
+              setIsSignOutOpen(true);
+            }}
+            onHaptic={haptic}
+          />
         </motion.section>
       </div>
 
@@ -896,178 +739,30 @@ export function SettingsScreen({ workouts, workoutDays, onUpdateWorkoutsAndDays 
       </motion.div>
     </motion.div>
 
-      {/* Dialogs - Kept functionally same but ensures classes match new aesthetic if needed. existing styling indialogs is mostly generic shadcn which is fine. */}
-      {/* Add Workout Dialog */}
-      {/* New Routine Dialog */}
-      <Dialog open={isAddWorkoutOpen} onOpenChange={setIsAddWorkoutOpen}>
-        <DialogContent 
-          hideCloseButton
-          centerMobile
-          className="w-[90%] max-w-[320px] overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/95 p-6 shadow-[0_24px_64px_rgba(0,0,0,0.85)] backdrop-blur-2xl outline-none select-none mx-auto flex flex-col items-center"
-        >
-          <DialogHeader className="w-full flex flex-col items-center space-y-0 text-center">
-            <div className="mx-auto mb-3.5 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/80 text-zinc-300 shadow-sm">
-              <Plus className="h-5 w-5" strokeWidth={2.2} />
-            </div>
-            <DialogTitle className="text-base font-bold tracking-tight text-white text-center w-full">
-              New Routine
-            </DialogTitle>
-            <DialogDescription className="text-xs text-zinc-400 text-center w-full mt-1">
-              Name your routine to get started.
-            </DialogDescription>
-          </DialogHeader>
+      {/* Dialogs */}
+      <AddWorkoutDialog
+        open={isAddWorkoutOpen}
+        onOpenChange={setIsAddWorkoutOpen}
+        workoutName={newWorkoutName}
+        onWorkoutNameChange={setNewWorkoutName}
+        onAddWorkout={handleAddWorkout}
+      />
 
-          <div className="w-full my-4">
-            <Label htmlFor="workout-name" className="sr-only">Routine Name</Label>
-            <Input
-              id="workout-name"
-              aria-label="Routine name"
-              value={newWorkoutName}
-              onChange={(e) => setNewWorkoutName(e.target.value)}
-              placeholder="e.g. Summer Cut, Bulking..."
-              className="h-10 rounded-xl border-zinc-800 bg-zinc-900/60 px-3.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-zinc-700 focus:ring-1 focus:ring-zinc-700/50 w-full transition-colors"
-              autoFocus
-            />
-          </div>
-
-          {/* Buttons Row */}
-          <div className="flex flex-row justify-between gap-2.5 w-full">
-            <button
-              type="button"
-              onClick={() => setIsAddWorkoutOpen(false)}
-              className="flex-1 h-10 rounded-xl border border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-xs font-semibold text-zinc-300 hover:text-white transition-all active:scale-[0.98] shadow-none cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleAddWorkout}
-              disabled={!newWorkoutName.trim()}
-              className="flex-1 h-10 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-semibold px-3 text-xs transition-all active:scale-[0.98] disabled:opacity-25 disabled:pointer-events-none shadow-sm cursor-pointer border-none"
-            >
-              Create
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Exercise Dialog */}
-      <Dialog open={isAddExerciseOpen} onOpenChange={setIsAddExerciseOpen}>
-        <DialogContent 
-          hideCloseButton
-          centerMobile
-          className="w-[90%] max-w-[320px] overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/95 p-6 shadow-[0_24px_64px_rgba(0,0,0,0.85)] backdrop-blur-2xl outline-none select-none mx-auto flex flex-col items-center"
-        >
-          <DialogHeader className="w-full flex flex-col items-center space-y-0 text-center">
-            <div className="mx-auto mb-3.5 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/80 text-zinc-300 shadow-sm">
-              <Dumbbell className="h-5 w-5" strokeWidth={2} />
-            </div>
-            <DialogTitle className="text-base font-bold tracking-tight text-white text-center w-full">
-              New Exercise
-            </DialogTitle>
-            <DialogDescription className="text-xs text-zinc-400 text-center w-full mt-1">
-              Search or enter a custom exercise name.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="w-full my-4 relative">
-            <Label htmlFor="exercise-name" className="sr-only">Exercise Name</Label>
-            <div className="w-full">
-              <Input
-                id="exercise-name"
-                ref={inputRef}
-                aria-label="Exercise name"
-                value={newExerciseName}
-                onChange={(e) => {
-                  setNewExerciseName(e.target.value);
-                  setShowSuggestions(true);
-                  setHighlightedIndex(-1);
-                }}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                onKeyDown={(e) => {
-                  if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    setHighlightedIndex(prev => Math.min(prev + 1, filteredExercises.length - 1));
-                  } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    setHighlightedIndex(prev => Math.max(prev - 1, -1));
-                  } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (highlightedIndex >= 0 && highlightedIndex < filteredExercises.length) {
-                      setNewExerciseName(filteredExercises[highlightedIndex].name);
-                      setShowSuggestions(false);
-                    } else if (newExerciseName.trim()) {
-                      handleAddExercise();
-                    }
-                  } else if (e.key === 'Escape') {
-                    setShowSuggestions(false);
-                  }
-                }}
-                placeholder="e.g. Incline Bench Press"
-                className="h-10 rounded-xl border-zinc-800 bg-zinc-900/60 px-3.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-zinc-700 focus:ring-1 focus:ring-zinc-700/50 w-full transition-colors"
-                autoComplete="off"
-                autoFocus
-              />
-              <AnimatePresence>
-                {showSuggestions && newExerciseName.trim().length > 0 && filteredExercises.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.15 }}
-                    className="overflow-hidden mt-2"
-                  >
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-950/95 p-1 max-h-[130px] overflow-y-auto hide-scrollbar space-y-0.5 shadow-xl">
-                      {filteredExercises.map((ex, idx) => (
-                        <button
-                          key={ex.id || ex.name}
-                          type="button"
-                          className={cn(
-                            "w-full px-3 py-1.5 rounded-lg text-left text-xs font-medium transition-colors cursor-pointer",
-                            idx === highlightedIndex 
-                              ? 'bg-zinc-800 text-white font-semibold' 
-                              : 'text-zinc-300 hover:bg-zinc-800/60 hover:text-white'
-                          )}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            setNewExerciseName(ex.name);
-                            setShowSuggestions(false);
-                          }}
-                          onClick={() => {
-                            setNewExerciseName(ex.name);
-                            setShowSuggestions(false);
-                            inputRef.current?.focus();
-                          }}
-                        >
-                          <span className="truncate">{ex.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-          {/* Buttons Row */}
-          <div className="flex flex-row justify-between gap-2.5 w-full">
-            <button
-              type="button"
-              onClick={() => setIsAddExerciseOpen(false)}
-              className="flex-1 h-10 rounded-xl border border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-xs font-semibold text-zinc-300 hover:text-white transition-all active:scale-[0.98] shadow-none cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleAddExercise}
-              disabled={!newExerciseName.trim() || !selectedWorkoutId || !selectedDayId || isCreatingExercise}
-              className="flex-1 h-10 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-semibold px-3 text-xs transition-all active:scale-[0.98] disabled:opacity-25 disabled:pointer-events-none shadow-sm cursor-pointer border-none"
-            >
-              {isCreatingExercise ? 'Adding...' : 'Add'}
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AddExerciseDialog
+        open={isAddExerciseOpen}
+        onOpenChange={setIsAddExerciseOpen}
+        exerciseName={newExerciseName}
+        onExerciseNameChange={setNewExerciseName}
+        filteredExercises={filteredExercises}
+        highlightedIndex={highlightedIndex}
+        setHighlightedIndex={setHighlightedIndex}
+        showSuggestions={showSuggestions}
+        setShowSuggestions={setShowSuggestions}
+        onAddExercise={handleAddExercise}
+        isCreatingExercise={isCreatingExercise}
+        selectedWorkoutId={selectedWorkoutId}
+        selectedDayId={selectedDayId}
+      />
 
       <ResetConfirmationModal
         isOpen={isSignOutOpen}
