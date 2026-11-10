@@ -7,8 +7,8 @@ export default async function middleware(req: NextRequest) {
   const supabase = createMiddlewareClient({ req, res });
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const authRecoveryRoutes = ['/auth/reset-password', '/auth/verify'];
   const isAuthRecoveryRoute = authRecoveryRoutes.some(route =>
@@ -17,7 +17,7 @@ export default async function middleware(req: NextRequest) {
 
   // Auth routes handling: redirect signed-in users trying to access auth pages back to home
   if (req.nextUrl.pathname.startsWith('/auth')) {
-    if (session && !isAuthRecoveryRoute) {
+    if (user && !isAuthRecoveryRoute) {
       return NextResponse.redirect(new URL('/', req.url));
     }
     return res;

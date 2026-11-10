@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, username?: string, recoveryEmail?: string) => {
     try {
-      const metadata: Record<string, any> = {};
+      const metadata: Record<string, string> = {};
       if (username) metadata.username = username;
       if (recoveryEmail) metadata.recovery_email = recoveryEmail.trim().toLowerCase();
 

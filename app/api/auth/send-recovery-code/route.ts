@@ -175,9 +175,17 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(1);
 
+    interface VerificationRecord {
+      id: string;
+      code: string;
+      expires_at: string;
+      attempts?: number | null;
+      used_at?: string | null;
+    }
+
     let queryResult = await selectQuery;
     let hasAttemptsColumn = true;
-    let records: any[] | null = queryResult.data;
+    let records: VerificationRecord[] | null = queryResult.data as VerificationRecord[] | null;
 
     if (queryResult.error) {
       // Postgres error 42703 is "undefined_column"
@@ -267,7 +275,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Mark code as used on successful verification so it can only be used once, and record the final attempt count
-    const updatePayload: any = { used_at: now.toISOString() };
+    const updatePayload: Record<string, unknown> = { used_at: now.toISOString() };
     if (hasAttemptsColumn) {
       updatePayload.attempts = newAttempts;
     }
